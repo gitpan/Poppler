@@ -1,0 +1,55 @@
+
+TYPEMAP
+
+PopplerDocument * T_PTROBJ
+_PopplerDocument * T_OBJECT
+_PopplerPage * T_OBJECT
+_PageDimension * T_OBJECT
+
+PopplerPage * T_PTROBJ
+cairo_t * T_OBJECT
+
+INPUT
+
+T_OBJECT
+    if (sv_isobject($arg) && SvTYPE(SvRV($arg)) == SVt_PVMG)
+    {
+        IV tmp = SvIV((SV*)SvRV($arg));
+        $var = INT2PTR($type, tmp);
+    }
+    else
+        Perl_croak(aTHX_ \"${Package}::$func_name(): $var is not a blessed SV reference\");
+
+
+
+
+T_POPPLERPERL_GENERIC_WRAPPER
+    $var = Sv${;
+      (my $ntype = $type) =~ s/(?:const\s+)?([:\w]+)(?:\s*\*)$/$1/x;
+      my $result = $type;
+      if ($ntype =~ m/(.+)_t(_.+)?/) {
+        my ($name, $options) = ($1, $2);
+        $name =~ s/([^_]+)/ucfirst $1/ge;
+        $name =~ s/_//g;
+        $result = $name . $options;
+      }
+      \$result} ($arg);
+
+OUTPUT
+
+T_OBJECT
+    sv_setref_pv($arg, class , (void*)$var);
+
+T_POPPLERPERL_GENERIC_WRAPPER
+    $arg = newSV${;
+      (my $ntype = $type) =~ s/(?:const\s+)?([:\w]+)(?:\s*\*)$/$1/x;
+      my $result = $type;
+      if ($ntype =~ m/(.+)_t(_.+)?/) {
+        my ($name, $options) = ($1, $2);
+        $name =~ s/([^_]+)/ucfirst $1/ge;
+        $name =~ s/_//g;
+        $result = $name . $options;
+      }
+      \$result} ($var);
+                               
+

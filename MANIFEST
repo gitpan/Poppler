@@ -1,0 +1,13 @@
+Changes
+lib/Poppler.pm
+Makefile.PL
+MANIFEST
+perl-poppler.h
+perlxs.pdf
+Poppler.xs
+ppport.h
+README
+t/Poppler.t
+test-case.pl
+typemap
+META.yml                                 Module meta-data (added by MakeMaker)
