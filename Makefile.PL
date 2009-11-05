@@ -13,21 +13,28 @@ print "Checking poppler lib\n";
 eval { %poppler_cfg = ExtUtils::PkgConfig->find ("poppler >= $extreqs{poppler}"); };
 if ($@ ne '') {
     warn $@; 
-    exit 0;
+    WriteMakefile(
+        PREREQ_FATAL => 1,
+    );
+    exit 1;
 }
+
 
 WriteMakefile(
     NAME              => 'Poppler',
     VERSION_FROM      => 'lib/Poppler.pm', # finds $VERSION
     PREREQ_PM         => {
         Cairo => 0,
-    }, # e.g., Module::Name => 1.1
+    },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Poppler.pm', # retrieve abstract from module
        AUTHOR         => 'Cornelius <cornelius.howl@gmail.com>') : ()),
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-	# Un-comment this if you add C files to link with later:
-    # OBJECT            => '$(O_FILES)', # link all the C files too
     INC     => `pkg-config --cflags poppler-glib`,
     LIBS    =>  `pkg-config --libs poppler-glib`,
+    XS      => {
+        'Poppler.xs' => 'Poppler.c',
+        'Goo.xs' => 'Goo.c',
+    },
+    'OBJECT' => 'Poppler$(OBJ_EXT) Goo$(OBJ_EXT)' ,
 );

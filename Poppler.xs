@@ -2,42 +2,13 @@
 #include "perl.h"
 #include "XSUB.h"
 #include "ppport.h"
-
 #include "perl-poppler.h"
 
-
-#include <poppler.h>
-#include <poppler/glib/poppler.h>
-#include <poppler/glib/poppler-page.h>
-
-
-#define FAIL(msg)							\
-    do { fprintf (stderr, "FAIL: %s\n", msg); exit (-1); } while (0)
-
-
-typedef struct {
-    PopplerDocument *handle;
-} hPopplerDocument;
-
-typedef struct {
-    PopplerPage *handle;
-} hPopplerPage;
-
-typedef struct {
-    PopplerAttachment *handle;
-} hPopplerAttachment;
-
-typedef struct {
-  unsigned char *cairo_data;
-  cairo_surface_t *surface;
-  cairo_t *cairo;
-} OutputDevData;
-
-
-typedef struct {
-    double w;
-    double h;
-} hPageDimension;
+#define POPPLER_PERL_CALL_BOOT(name)              \
+    {                           \
+        extern XS(name);                \
+        call_xs (aTHX_ name, cv, mark); \
+    }
 
 MODULE = Poppler		PACKAGE = Poppler::Document
 
@@ -45,6 +16,10 @@ BOOT:
     g_type_init();
 
 PROTOTYPES: ENABLE
+
+void DESTROY(hPopplerDocument *doc)
+CODE:
+  g_object_unref( doc->handle );
 
 hPopplerDocument*
 new_from_file( class , filename )
@@ -57,8 +32,7 @@ CODE:
     Newz(0, RETVAL, 1, hPopplerDocument );
     document = poppler_document_new_from_file( filename , NULL , NULL );
     if( document == NULL ) {
-        fprintf( stderr , filename );
-        FAIL("poppler_document_new_from_file fail");  // XXX: show path usage
+        croak("poppler_document_new_from_file failed for %s", filename);
     }
     RETVAL->handle = document;
 OUTPUT:
@@ -136,14 +110,10 @@ CODE:
     page = poppler_document_get_page_by_label( THIS->handle , label );
     char* class = "Poppler::Page";  
     if( page == NULL )
-        FAIL( "get page failed." );
+        croak( "get page failed." );
     RETVAL->handle = page;
 OUTPUT:
     RETVAL
-
-
-
-
 
 
 hPopplerPage*
@@ -156,20 +126,19 @@ CODE:
     page = poppler_document_get_page( THIS->handle , page_num );
     char* class = "Poppler::Page";  // XXX: bad hack
     if( page == NULL )
-        FAIL( "get page failed." );
+        croak( "get page failed." );
 
     RETVAL->handle = page;
 OUTPUT:
     RETVAL
 
 
+MODULE = Poppler::Page    PACKAGE = Poppler::Page
 
+void DESTROY(hPopplerPage *page)
+CODE:
+  g_object_unref( page->handle );
 
-
-
-
-
-MODULE = Poppler    PACKAGE = Poppler::Page
 
 hPageDimension*
 hPopplerPage::get_size();
@@ -299,7 +268,16 @@ OUTPUT:
 ## NO_OUPUT:
 
 
+
+
+
+
 MODULE = Poppler    PACKAGE = Poppler::Attachment
+
+void DESTROY(hPopplerAttachment *attachment)
+CODE:
+  g_object_unref( attachment->handle );
+
 
 int
 hPopplerAttachment::save( filename );
@@ -333,6 +311,12 @@ OUTPUT:
 
 
 MODULE = Poppler    PACKAGE = Poppler::OutputDevData
+
+void DESTROY(OutputDevData *outputdevdata)
+CODE:
+  cairo_surface_destroy( outputdevdata->surface );
+  cairo_destroy( outputdevdata->cairo );
+
 
 cairo_t*
 OutputDevData::get_cairo_context()
