@@ -1,5 +1,9 @@
 Revision history for Perl extension Poppler.
 
+0.04  四  2/ 3 01:34:50 2011
+
+    - support: creating poppler document from data
+
 0.01  Sat Apr 25 13:46:04 2009
 	- original version; created by h2xs 1.23 with options
 		-A -n Poppler
